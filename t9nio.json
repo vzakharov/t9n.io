@@ -1,0 +1,174 @@
+[	"#_start",
+	">>debug",
+	"check firstName", [
+		null, [
+			"Hey, I’m Tynio, the translating hummingbird.",
+			"check @channel", [
+				"skype", [
+					"And you must be @skypeFirstName?", [
+						"yes", [
+							"set firstName @skypeFirstName",
+							">>nameConfirmed"
+						],
+						"no", [
+							"Oh, sorry! How should I call you, then?",
+							"read firstName",
+							">>nameConfirmed"
+						]
+					]
+				],
+				"else", [
+					"And you must be ...?",
+					"read firstName",
+					"#nameConfirmed",
+					"Nice to meet you, @firstName!",
+					"You can change your name at any time by typing ```/name [your first name]```.",
+					"So, @firstName, what would you like to do today?",
+					">>_menu"
+				]
+			]
+		]
+	],
+	"#debug",
+	"Hey @firstName, what would you like to do now?",
+	"#_menu", [
+		"Translate a document", [
+			"Sure, just upload it here!",
+			"load doc",
+			"Got your doc named @doc.name.",
+			"#docReceived",
+			"Is the text in English?", [
+				"Yes", [
+					"set doc.sourceLang en",
+					"What language do you want to translate it to?", 
+					"choose doc.targetLang", [
+						"among supportedTargetLangs", [
+							"Okay, now if you give me a minute while I’m doing some math...",
+							"custom smartcat create project",
+							"#countStats",
+							"custom smartcat get wordCount",
+							"wait 10",
+							"check wordCount", [
+								"none", ">>countStats",
+								"else", [
+									"Okay, we’ve got @wordCount words here.",
+									"custom t9nio calculate pricingOptions",
+									"Here are the pricing options:",
+									"for pricingOptions", "**$@x.price** for @x.caption",
+									"Which one do you prefer, or do you want me to help you decide?", [
+										"pricingOption among pricingOptions", [
+											"set purchase price @pricingOption.price",
+											"set purchase description @pricingOption.caption of @doc.name",
+											"custom purchase get link",
+											"Great! Here’s the link to pay: @purchase.link",
+											"wait purchase callback success",
+											"Alrighty, your @purchase.price bucks are well received! Starting out the search!",
+											">>searchTranslators"
+										],
+										"Help me decide", ">>priceAdvice"
+									]
+								]
+							]
+						]
+					]
+				],
+				"No", []
+			]
+		],
+		"Translate plain text", [
+			"Sure, send it over in this chat!",
+			"read text",
+			"textToFile text doc",
+			">>docReceived"
+		],
+		"Check my docs", "need docs", 
+		[
+			"Here you go:"
+		]
+	],
+	"#priceAdvice", [
+		"Main question: Who is the primary reader of this translation, you or someone else?", [
+			"Me", [
+				"set knowsTarget yes",
+				"Excellent. {[Do you|I] need [this translation|it] to read well}, or {[will it|It will] do if it’s [just |]good enough for you|me to understand} the text?", [
+					[
+						"set advice.humanEditedMT no",
+						">>checkIfKnowsSourceLang"
+					],
+					[
+						"set advice.humanEditedMT yes",
+						"Seems like you could do great with human-edited machine translation. It’s fast, cheap, and in many pairs provides a pretty well-readable translation.",
+						"But there’s a caveat: Modern MT engines are prone to so-called “false fluency”. It is when the translation reads so well that the translator “skips” it without finding out that it is factually incorrect.",
+						"This problem is more pronounced for complex texts with many words per sentence, and of course more critical for texts w#factual correctness is paramount.",
+						"So, first question here: Do you think the source text is complex?", [
+							"yes", ">>proofreaderNeeded",
+							"no", [
+								"Okay, then I think human-edited MT would work just fine for you!"
+							],
+							"I don’t really know", [
+								"set alt1",
+								"Okay, let’s stay on the safe side.",
+								">>proofreaderNeeded"
+							]
+						]
+					]
+				]
+			],
+			"Someone else", [
+				"Alrighty. So, do you know the target language(s) well enough to understand if the translated text reads well?", [
+					"yes", [
+						"set knowsTarget",
+						"#checkIfKnowsSourceLang",
+						"And @othersInvolved?[do they know|do you know] the source language(s) well enough to see if the translation is acccurate?", [
+							"yes", [
+								"#checkIfWillingToReview",
+								"Now, @othersInvolved?[are they|are you] willing to review whether the translation is good?", [
+									"yes", [
+										"Great, then we likely don’t need a proofreader",
+										"set advice.proofreaderNeeded no"
+									],
+									"no", [
+										"#proofreaderNeeded",
+										"set advice.proofreaderNeeded yes",
+										"@alt1?[It means that|Okay, then] we’ll need a proofreader to check the translation."
+									]
+								],
+								"Now the time question.",
+								"You will get the best quality if a single translator works on the whole text. This way they work in the most stress-free environment and can ensure that the style and flow is consistent throughout the text. But one translator can only translate so many words per hour/day.",
+								"Another option is to have many translators work at once. This will be done much faster, but consistency in terminology and style may suffer.",
+								"So the question is, how quickly do you need this done?", [
+									"As soon as reasonably possible — it’s really urgent", [
+										"Okay, then let’s go for crowdsourcing.",
+										"set advice.crowdsourcing yes"
+									],
+									"The sooner the better — but I understand it takes time", [
+										"Great, then let’s have one translator do this."
+									]
+								],
+								"And, finally, BUDGET.",
+								"I take quality seriously. So, by default, all our translators are *good*. But then there are *great* ones. The difference is subtle, but you can get it when you can read it — just as you would get the difference between, say, a 4- and a 5-star hotel.",
+								"..."
+							],
+							"no", ">>checkOthersInvolved"
+						]
+					],
+					"no", [
+						"set checkOthersInvolved",
+						"And do you know anyone who does and can do this for you?", [
+							"yes", [
+								"set othersInvolved",
+								"check knowsTarget?", ">>checkIfWillingToReview",
+								">>checkIfKnowsSourceLang"
+							],
+							"no", [
+								"set alt1",
+								">>proofreaderNeeded"
+							]
+						]
+					]
+				]
+			]
+		]
+	],
+	"Okay, here’s my advice:"
+]
