@@ -6,9 +6,6 @@ var axios = require('axios');
 var botbuilder_azure = require("botbuilder-azure");
 var FormData = require('form-data');
 var https = require('https');
-var sleep = require('system-sleep');
-var timeout = require('timeout-then');
-var googl = require('goorl');
 var Alan = require('./alan')
 
 
