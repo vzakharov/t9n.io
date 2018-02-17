@@ -6,7 +6,6 @@ var axios = require('axios');
 var botbuilder_azure = require("botbuilder-azure");
 var FormData = require('form-data');
 var https = require('https');
-var Alan = require('./alan')
 
 
 const googlKey = 'AIzaSyDBoAT9uUzsbYTzId03Ex_hzu0kKAJHzbw';
@@ -92,17 +91,12 @@ var bot = new builder.UniversalBot(connector, [
     }
 ]).set('storage', inMemoryStorage);
 
-Alan.init('./t9nio.json', bot, connector)
+var Alan = require('./alan')('./t9nio.json', bot)
 
 bot.dialog('start', [
     function (session) {
-        if (session.message.text == "alan") {                        
-            let alan = Alan.makeAlan(session)
-            session.beginDialog("alan.run")
-        } else {
-            session.send("Hey, I’m Tynio, the translating hummingbird.")
-            session.beginDialog('getDoc');
-        }
+        let alan = new Alan(session)
+        session.beginDialog("alan.step")
     },
     function (session, results) {
         console.log(results);
