@@ -92,7 +92,7 @@ var bot = new builder.UniversalBot(connector, [
     }
 ]).set('storage', inMemoryStorage);
 
-var Alan = require('alanbot')('./t9nio.json', bot)
+var Alan = require('alanbot')(require('./t9nio.json'), bot)
 
 bot.dialog('start', [
     function (session) {
