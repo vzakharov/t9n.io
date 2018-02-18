@@ -4,6 +4,7 @@
     var bot
     var builder = require('botbuilder')
     var axios = require('axios')
+    var Rx = require ('xregexp')
 
     const variableNamePattern = "[a-z_][a-zA-Z0-9_.]*[a-zA-Z0-9_]" // RegExp pattern to be used for identifying variable names
     const fullVariableRegExp = new RegExp("^" + variableNamePattern + "$", 'g')
@@ -11,9 +12,29 @@
     
     const choiceOperators = ['among', 'need']
 
+    const defaultArgPattern = Rx(`(?<what>${variableNamePattern})$`)
+
     const rx = {
-    setToWhat: /^(to|=)$/,
-    number: /^[0-9.]+$/
+        setToWhat: /^(to|=)$/,
+        number: /^[0-9.]+$/,
+        command: /^([a-z][a-zA-Z.]+) (.+)$/,
+        args: {
+            choose: {
+                among: defaultArgPattern,
+                need: defaultArgPattern
+            },
+            set: Rx(`(?<what> ${variableNamePattern} )          # variable name
+                (
+                    (?<boolean> $)                          |   # no argument (set to 1/true)
+                    (   [ ]
+                        (?<toNextItem> (to|=|>>)$ )         |   # to the next item in the alan feed
+                        (?<number> [0-9.]+$)                |   # to a number 
+                        (?<var> @${variableNamePattern}$)   |   # to another variable’s value
+                        (?<value> .*)                           # to anything else
+                        $
+                    )
+                )`, 'x')
+        }
     }
 
     function getAlan(session) {
@@ -21,15 +42,15 @@
     }
 
     function prepare(code, branch = []) {
-    for (var i = 0; i < code.length; i++) {
-        item = code[i]
-        pos = branch.concat(i)
-        if (Array.isArray(item)) {
-            prepare(item, pos)
-        } else if (typeof item == "string" && item[0] == "#") {
-            labels[item.substring(1)] = pos
+        for (var i = 0; i < code.length; i++) {
+            item = code[i]
+            pos = branch.concat(i)
+            if (Array.isArray(item)) {
+                prepare(item, pos)
+            } else if (typeof item == "string" && item[0] == "#") {
+                labels[item.substring(1)] = pos
+            }
         }
-    }
     }
 
     function skip(session) {
@@ -63,14 +84,21 @@
         ])
 
         bot.dialog('alan.choose.among', [
-            
+            (session) => {
+                let alan = getAlan(session)
+                let choice = alan.choice
+                let what = choice.operator.args.what
+                let options = alan.getVar(what)
+                choice.options.unshift(options)
+                session.endDialog()
+            }
         ])
 
         bot.dialog('alan.choose.need', [
             (session) => {
                 let alan = getAlan(session)
                 let choice = alan.choice
-                let variable = alan.getVar(choice.operator.argument)
+                let variable = alan.getVar(choice.operator.args.what)
                 if (!variable) {
                     choice.options.shift()
                     choice.feed.shift()
@@ -89,20 +117,26 @@
                 if (Array.isArray(item)) {
                     choice.expectsCode = true
                     skip(session)
-                } else {                
-                    let choiceOperatorsRx = new RegExp(`^(${choiceOperators.join('|')}) (${variableNamePattern})$`)
-                    let match = item.match(choiceOperatorsRx)
-                    if (match) {
-                        choice.operator = {name:match[1], argument:match[2]}
-                        session.beginDialog("alan.choose." + choice.operator.name)                
-                    } else {
-                        if (choice.expectsCode) {                     
-                            skip(session)
-                        } else {
-                            choice.options.unshift(item)
-                            choice.expectsCode = true
-                            session.beginDialog('alan.choose.step')
+                } else {
+                    for (operatorName in rx.args.choose) {
+                        let operatorArgs = rx.args.choose[operatorName].xregexp.source
+                        let regex = Rx(`^${operatorName} ${operatorArgs}`)
+                        let args = Rx.exec(item, regex)
+                        if (args) {
+                            choice.operator = {
+                                name: operatorName,
+                                args: args
+                            }
+                            session.beginDialog('alan.choose.' + choice.operator.name)
+                            return
                         }
+                    }
+                    if (choice.expectsCode) {                     
+                        skip(session)
+                    } else {
+                        choice.options.unshift(item)
+                        choice.expectsCode = true
+                        session.beginDialog('alan.choose.step')
                     }
                 }
             },
@@ -110,7 +144,13 @@
                 let alan = getAlan(session)
                 let choice = alan.choice
                 if (choice.expectsCode) {
-                    choice.branches[choice.options[0]] = choice.item
+                    let options = choice.options[0]
+                    if (!Array.isArray(options)) {
+                        options = [options]
+                    }
+                    options.forEach(option => {
+                        choice.branches[option] = choice.item                        
+                    });
                     choice.expectsCode = false
                 }
                 if (choice.feed.length > 0) {
@@ -124,7 +164,7 @@
         bot.dialog('alan.choose', [
             (session) => {
                 let alan = getAlan(session)
-                alan.choice.var = alan.getVar(alan.command.argument)
+                alan.choice.var = alan.command.argument
                 session.endDialog()
             }
         ])
@@ -141,10 +181,11 @@
             }, 
             (session, results) => {
                 let alan = getAlan(session)
+                let choice = alan.choice
                 let result = results.response.entity
                 alan.command.result = result
-                alan.setVar(alan.command.argument, result)
-                alan.branches.unshift(alan.choice.branches[result])
+                alan.setVar(choice.var, result)
+                alan.branches.unshift(choice.branches[result])
                 alan.choice = Alan.default.choice
                 session.endDialog() 
             }
@@ -214,23 +255,21 @@
         bot.dialog('alan.set', [
             (session) => {
                 let alan = getAlan(session)
-                let argument = alan.command.argument
-                let what = argument.match(fullVariableRegExp)[0] 
-                let toWhat
-                if (argument.length == 1) {
-                    // Todo: set as a boolean
+                let args = Rx.exec(alan.command.argument, rx.args['set'])
+                let value
+                //let args = argument.split(' ')
+                if (args.boolean) {
+                    value = 1
+                } else if (args.number) {
+                    value = Number(args.number)
+                } else if (args.toNextItem) {
+                    value = alan.branches[0].shift()
+                } else if (args.var) {
+                    value = alan.getVar(args.var)
                 } else {
-                    toWhat = argument.slice(1).join(" ")
-                    if (toWhat.match(rx.setToWhat)) {
-                        // Todo: set to the next item in the code
-                    } else { // Set to the second argument, can be with an inline variable
-                        toWhat = alan.formatString(toWhat)
-                        if (toWhat.match(rx.number)){
-                            toWhat = Number(toWhat)
-                        }
-                    }
+                    value = args.value
                 }
-                alan.setVar(what, toWhat)
+                alan.setVar(args.what, value)
                 session.endDialog()
             }
         ])
@@ -323,13 +362,13 @@
                 this.command = {name: "skip", argument: null}
             } else if (item.substring(0,2) == ">>") {
                 this.command = {name: "goto", argument: item.substring(2)}
-            } else if (/^[a-z]/.test(item)) {
-                let array = item.split(" ")
-                let name = array[0]
-                let argument = array.slice(1)
-                this.command = {name: name, argument: argument}
             } else {
-                this.command = {name: "print", argument: item}
+                let match = item.match(rx.command)
+                if (match) {
+                    this.command = {name: match[1], argument: match[2]}
+                } else {
+                    this.command = {name: "print", argument: item}
+                }    
             }
         }
 
@@ -350,7 +389,11 @@
             let children = varName.split('.')
             let varBranch = alan.vars
             while (children.length > 1) {
-                varBranch = varBranch[children.shift()]
+                let item = children.shift()
+                if (!(item in varBranch)) {
+                    varBranch[item] = {}
+                }
+                varBranch = varBranch[item]                
             }
             return {branch:varBranch, leaf:children}
         }
@@ -368,7 +411,7 @@
                     branches: {},
                     options: [],
                     var: '_choice',
-                    operator: {},
+                    operator: null,
                     expectsCode: false,
                     item: "",
                     feed: []

@@ -1,4 +1,8 @@
 [	"#_start",
+	"set supportedTargetLangs to", [
+		"English", "Chinese (PRC)", "Japanese", "Spanish (America)", "Spanish (Europe)", 
+		"German", "French", "Portuguese (Brazil)", "Italian", "Russian", "Korean", "Arabic"
+	],
 	">>debug",
 	"check firstName", [
 		null, [
@@ -29,7 +33,6 @@
 			]
 		]
 	],
-	"#debug",
 	"Hey @firstName, what would you like to do now?",
 	"#_menu", [
 		"Translate a document", [
@@ -40,11 +43,12 @@
 			"Is the text in English?", [
 				"Yes", [
 					"set doc.sourceLang en",
+					"#debug",
 					"What language do you want to translate it to?", 
 					"choose doc.targetLang", [
 						"among supportedTargetLangs", [
 							"Okay, now if you give me a minute while I’m doing some math...",
-							"custom smartcat create project",
+							"sc.newProject",
 							"#countStats",
 							"custom smartcat get wordCount",
 							"wait 10",
