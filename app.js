@@ -7,14 +7,15 @@ var botbuilder_azure = require("botbuilder-azure");
 var FormData = require('form-data');
 var https = require('https');
 
+const Credentials = require('./credentials.json')
 
-const googlKey = 'AIzaSyDBoAT9uUzsbYTzId03Ex_hzu0kKAJHzbw';
+const googlKey = Credentials.googl
 
 var Paymentwall = require('paymentwall');
 Paymentwall.Configure(
   Paymentwall.Base.API_GOODS,
-  '25d3d3a4ee874be5fd79794f08a98e25',
-  'ed899ac9bee999bd3db187ade4b5cf98'
+  Credentials.paymentwall.username,
+  Credentials.paymentwall.password
 );
 
 // Setup Restify Server
@@ -61,8 +62,8 @@ var project_template = {
 
 const PRICE_PER_WORD = 0.10;
 const UPLOAD_A_DOC = "Translate a document"
-const API_USERNAME = "47492107-b890-4c58-aa78-696adc9e8317"
-const API_PASSWORD = "1_U7Pab7Lsz5gGNVoD6tu3isf7f"
+const API_USERNAME = Credentials.smartcat.username
+const API_PASSWORD = Credentials.smartcat.password
 const LANG_CODES = {
     "Chinese": "zh-Hans",
     "Japanese": "ja",
@@ -91,7 +92,7 @@ var bot = new builder.UniversalBot(connector, [
     }
 ]).set('storage', inMemoryStorage);
 
-var Alan = require('./alan')('./t9nio.json', bot)
+var Alan = require('alanbot')('./t9nio.json', bot)
 
 bot.dialog('start', [
     function (session) {
