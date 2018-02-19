@@ -6,6 +6,7 @@ var axios = require('axios');
 var botbuilder_azure = require("botbuilder-azure");
 var FormData = require('form-data');
 var https = require('https');
+var Alan = require('alanbot')
 
 const Credentials = require('./credentials.json')
 
@@ -92,12 +93,12 @@ var bot = new builder.UniversalBot(connector, [
     }
 ]).set('storage', inMemoryStorage);
 
-var Alan = require('alanbot')(require('./t9nio.json'), bot)
+Alan.init(require('./t9nio.json'), bot)
 
 bot.dialog('start', [
     function (session) {
         let alan = new Alan(session)
-        session.beginDialog("alan.step")
+        alan.do('go')        
     },
     function (session, results) {
         console.log(results);
