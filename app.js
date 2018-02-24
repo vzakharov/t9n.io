@@ -98,9 +98,35 @@ Alan.init(require('./t9nio.json'), bot)
 bot.dialog('start', [
     function (session) {
         let alan = new Alan(session)
-        alan.do('go')        
+        alan.go()
     },
     function (session, results) {
+        // Это никогда не будет вызываться, т.к.
+        // вся логика работы — внутри самого алана,
+        // но просто чтобы показать:
+        let alan = getAlan(session)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         console.log(results);
         doc = results.response[0];
         session.send("Your file named **" + doc.name + "** is well received!")        
