@@ -101,33 +101,7 @@ bot.dialog('start', [
         alan.go()
     },
     function (session, results) {
-        // Это никогда не будет вызываться, т.к.
-        // вся логика работы — внутри самого алана,
-        // но просто чтобы показать:
-        let alan = getAlan(session)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        console.log(results);
+          console.log(results);
         doc = results.response[0];
         session.send("Your file named **" + doc.name + "** is well received!")        
         builder.Prompts.choice(session, 
