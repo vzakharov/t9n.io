@@ -4,6 +4,7 @@
 		"German", "French", "Portuguese (Brazil)", "Italian", "Russian", "Korean", "Arabic"
 	],
 	">>debug",
+	"#debug",
 	"check firstName", [
 		null, [
 			"Hey, I’m Tynio, the translating hummingbird.",
@@ -43,7 +44,6 @@
 			"Is the text in English?", [
 				"Yes", [
 					"set doc.sourceLang en",
-					"#debug",
 					"What language do you want to translate it to?", 
 					"choose doc.targetLang", [
 						"among supportedTargetLangs", [
