@@ -4,7 +4,6 @@
 		"German", "French", "Portuguese (Brazil)", "Italian", "Russian", "Korean", "Arabic"
 	],
 	">>debug",
-	"#debug",
 	"check firstName", [
 		null, [
 			"Hey, I’m Tynio, the translating hummingbird.",
@@ -34,6 +33,7 @@
 			]
 		]
 	],
+	"#debug",
 	"Hey @firstName, what would you like to do now?",
 	"#_menu", [
 		"Translate a document", [
