@@ -9,14 +9,18 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@slack/events-api": "^2.2.0",
+    "@slack/web-api": "^5.0.1",
+    "alan": "github:vzakharov/alanbot",
     "axios": "^0.17.1",
     "botbuilder": "^3.13.1",
     "botbuilder-azure": "^3.0.4",
+    "dotenv": "^8.0.0",
     "form-data": "^2.3.1",
+    "lodash": "^4.17.11",
     "paymentwall": "^1.2.4",
     "restify": "^5.0.0",
-    "xregexp": "^4.0.0",
-    "alan": "github:vzakharov/alanbot"
+    "xregexp": "^4.0.0"
   },
   "devDependencies": {
     "request": "^2.81.0",
